@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("LEAFLET GPX v3");
+  console.log("LEAFLET GPX v4");
 
   function init() {
 
@@ -24,9 +24,33 @@
     // ---- Carte ----
     var map = L.map("map");
 
-    L.tileLayer(
+    // ---- Fonds de carte ----
+    var osm = L.tileLayer(
       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      { attribution: "&copy; OpenStreetMap" }
+      { attribution: "&copy; OpenStreetMap contributors" }
+    );
+
+    var topo = L.tileLayer(
+      "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      { attribution: "&copy; OpenTopoMap contributors" }
+    );
+
+    var satellite = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { attribution: "&copy; Esri" }
+    );
+
+    // fond par défaut
+    topo.addTo(map);
+
+    L.control.layers(
+      {
+        "Topographique": topo,
+        "OpenStreetMap": osm,
+        "Satellite": satellite
+      },
+      null,
+      { collapsed: true }
     ).addTo(map);
 
     // ---- Icône rouge ----
@@ -39,7 +63,7 @@
       iconAnchor: [12, 41]
     });
 
-    var bounds; // mémorisation pour recentrage
+    var bounds;
 
     // ---- GPX ----
     fetch(gpxUrl)
@@ -65,12 +89,10 @@
         bounds = line.getBounds();
         map.fitBounds(bounds, { padding: [40, 40] });
 
-        // départ
         L.marker(latlngs[0], { icon: redIcon })
           .addTo(map)
           .bindPopup("🚩 Départ");
 
-        // arrivée
         L.marker(latlngs[latlngs.length - 1], { icon: redIcon })
           .addTo(map)
           .bindPopup("🏁 Arrivée");
@@ -98,7 +120,6 @@
           })
           .then(function (blob) {
 
-            // nom original du fichier
             var filename = gpxUrl.split("/").pop();
 
             var url = URL.createObjectURL(blob);
