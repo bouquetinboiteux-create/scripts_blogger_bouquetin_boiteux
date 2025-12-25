@@ -82,3 +82,7 @@
       L.marker(latlngs[latlngs.length - 1], { icon: redIcon })
         .addTo(map)
         .bindPopup("🏁 Arrivée");
+
+    });
+
+})();
