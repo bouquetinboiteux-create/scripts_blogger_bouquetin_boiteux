@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("LEAFLET GPX SCRIPT V2 OK");
+  console.log("LEAFLET GPX v3");
 
   function init() {
 
@@ -39,6 +39,8 @@
       iconAnchor: [12, 41]
     });
 
+    var bounds; // mémorisation pour recentrage
+
     // ---- GPX ----
     fetch(gpxUrl)
       .then(function (r) { return r.text(); })
@@ -60,7 +62,8 @@
           weight: 4
         }).addTo(map);
 
-        map.fitBounds(line.getBounds(), { padding: [40, 40] });
+        bounds = line.getBounds();
+        map.fitBounds(bounds, { padding: [40, 40] });
 
         // départ
         L.marker(latlngs[0], { icon: redIcon })
@@ -73,6 +76,42 @@
           .bindPopup("🏁 Arrivée");
 
       });
+
+    // ---- Bouton RECENTRER ----
+    var recenterBtn = document.getElementById("recenterBtn");
+    if (recenterBtn) {
+      recenterBtn.onclick = function () {
+        if (bounds) {
+          map.fitBounds(bounds, { padding: [40, 40] });
+        }
+      };
+    }
+
+    // ---- Bouton TÉLÉCHARGER GPX ----
+    var downloadBtn = document.getElementById("downloadBtn");
+    if (downloadBtn) {
+      downloadBtn.onclick = function () {
+
+        fetch(gpxUrl)
+          .then(function (response) {
+            return response.blob();
+          })
+          .then(function (blob) {
+
+            // nom original du fichier
+            var filename = gpxUrl.split("/").pop();
+
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          });
+      };
+    }
 
   }
 
