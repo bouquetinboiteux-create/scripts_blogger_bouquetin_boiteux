@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v9");
+  console.log("Leaflet GPX Blog v10");
 
   function init() {
 
@@ -142,8 +142,8 @@
         ========================= */
         function angle(p1, p2) {
           return Math.atan2(
-            p2[0] - p1[0],
-            p2[1] - p1[1]
+            p2[1] - p1[1], // Δ longitude (X)
+            p2[0] - p1[0]  // Δ latitude  (Y)
           ) * 180 / Math.PI;
         }
 
@@ -157,7 +157,15 @@
           iconAnchor: [6, 6]
         });
 
-        for (var i = 10; i < latlngs.length; i += 20) {
+        var lastArrowDist = 0;
+        var arrowStep = 800; // mètres
+        
+        for (var i = 1; i < latlngs.length; i++) {
+        
+          if (dist[i] - lastArrowDist < arrowStep) continue;
+        
+          lastArrowDist = dist[i];
+        
           L.marker(latlngs[i], {
             icon: arrowIcon,
             rotationAngle: angle(latlngs[i - 1], latlngs[i]),
