@@ -1,166 +1,212 @@
-console.log("leaflet-gpx.js chargé");
-
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM prêt");
+(function waitForMap() {
 
   var mapDiv = document.getElementById("map");
   if (!mapDiv) {
-    console.error("DIV #map introuvable");
+    setTimeout(waitForMap, 100);
+    return;
+  }
+
+  if (typeof L === "undefined") {
+    console.error("Leaflet non chargé");
     return;
   }
 
   var gpxUrl = mapDiv.dataset.gpx;
   if (!gpxUrl) {
-    console.error("Attribut data-gpx manquant");
+    console.error("Attribut data-gpx manquant sur #map");
     return;
   }
 
-  console.log("GPX détecté :", gpxUrl);
+  // ======================
+  // CARTE & FONDS
+  // ======================
 
-document.addEventListener("DOMContentLoaded", function () {
-
-  var mapDiv = document.getElementById("map");
-  if (!mapDiv) return;
-
-  var gpxUrl = mapDiv.dataset.gpx;
-  if (!gpxUrl) {
-    console.error("Aucun GPX défini (data-gpx)");
-    return;
-  }
-
-  // ----- TAILLE CARTE -----
-  mapDiv.style.height = mapDiv.dataset.height || "420px";
-
-  // ----- CARTE -----
   var map = L.map("map");
 
   var osm = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { attribution: "&copy; OpenStreetMap" }
-  ).addTo(map);
+    { attribution: "&copy; OpenStreetMap contributors" }
+  );
 
   var topo = L.tileLayer(
     "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-    { attribution: "&copy; OpenTopoMap" }
+    { attribution: "&copy; OpenTopoMap contributors" }
   );
 
-  var sat = L.tileLayer(
-    "https://server.arcgisonline.com/ArcGIS/rest/services/" +
-    "World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  var satellite = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     { attribution: "&copy; Esri" }
   );
 
-  L.control.layers(
-    {
-      "Plan": osm,
-      "Topo": topo,
-      "Satellite": sat
-    },
-    null,
-    { position: "topright" }
-  ).addTo(map);
+  topo.addTo(map);
 
-  // ----- BOUTON PLEIN ÉCRAN -----
-  var fullscreenBtn;
+  L.control.layers({
+    "OpenStreetMap": osm,
+    "Topographique": topo,
+    "Satellite": satellite
+  }).addTo(map);
 
-  var FullscreenControl = L.Control.extend({
-    options: { position: "topleft" },
+  // ======================
+  // ICÔNE
+  // ======================
 
-    onAdd: function () {
-      fullscreenBtn = L.DomUtil.create("a", "leaflet-bar leaflet-control");
-      fullscreenBtn.href = "#";
-      fullscreenBtn.title = "Plein écran";
-
-      fullscreenBtn.style.width = "30px";
-      fullscreenBtn.style.height = "30px";
-      fullscreenBtn.style.display = "flex";
-      fullscreenBtn.style.alignItems = "center";
-      fullscreenBtn.style.justifyContent = "center";
-      fullscreenBtn.style.fontSize = "18px";
-      fullscreenBtn.style.fontWeight = "bold";
-      fullscreenBtn.style.backgroundColor = "white";
-      fullscreenBtn.style.color = "#000";
-      fullscreenBtn.style.borderRadius = "4px";
-      fullscreenBtn.style.cursor = "pointer";
-      fullscreenBtn.style.userSelect = "none";
-
-      fullscreenBtn.innerHTML = "⛶";
-
-      L.DomEvent.on(fullscreenBtn, "click", function (e) {
-        L.DomEvent.stop(e);
-        toggleFullscreen();
-      });
-
-      return fullscreenBtn;
-    }
+  var redIcon = L.icon({
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+    shadowUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    shadowSize: [41, 41]
   });
 
-  map.addControl(new FullscreenControl());
+  // ======================
+  // CHARGEMENT GPX
+  // ======================
 
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      mapDiv.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  }
+  fetch(gpxUrl)
+    .then(r => r.text())
+    .then(text => {
 
-  document.addEventListener("fullscreenchange", function () {
-    if (!fullscreenBtn) return;
+      var xml = new DOMParser().parseFromString(text, "application/xml");
+      var trkpts = xml.getElementsByTagName("trkpt");
 
-    fullscreenBtn.innerHTML = document.fullscreenElement ? "⤡" : "⛶";
-    setTimeout(function () {
-      map.invalidateSize();
-    }, 200);
-  });
+      if (!trkpts.length) {
+        console.error("GPX vide ou invalide");
+        return;
+      }
 
-  // ----- GPX -----
-  new L.GPX(gpxUrl, { async: true })
-    .on("loaded", function (e) {
+      var latlngs = [];
+      var elevations = [];
 
-      var gpx = e.target;
-      map.fitBounds(gpx.getBounds(), { padding: [40, 40] });
+      for (var i = 0; i < trkpts.length; i++) {
+        var lat = parseFloat(trkpts[i].getAttribute("lat"));
+        var lon = parseFloat(trkpts[i].getAttribute("lon"));
+        latlngs.push([lat, lon]);
 
-      // ----- PROFIL ALTIMÉTRIQUE -----
-      var latlngs = gpx.getLayers()[0].getLatLngs();
-      var elevations = latlngs.map(p => p.meta.ele || 0);
+        var ele = trkpts[i].getElementsByTagName("ele")[0];
+        elevations.push(ele ? parseFloat(ele.textContent) : 0);
+      }
 
-      if (!document.getElementById("profile")) return;
+      var polyline = L.polyline(latlngs, {
+        color: "red",
+        weight: 4,
+        opacity: 0.9
+      }).addTo(map);
 
-      var dist = [0];
-      var total = 0;
+      var bounds = polyline.getBounds();
+      map.fitBounds(bounds, { padding: [40, 40] });
+
+      // départ
+      L.marker(latlngs[0], { icon: redIcon })
+        .addTo(map)
+        .bindPopup("🚩 Départ");
+
+      // arrivée
+      L.marker(latlngs[latlngs.length - 1], { icon: redIcon })
+        .addTo(map)
+        .bindPopup("🏁 Arrivée");
+
+      // ======================
+      // DISTANCE & D+
+      // ======================
+
+      var distance = 0;
+      var denivele = 0;
 
       for (var i = 1; i < latlngs.length; i++) {
-        total += map.distance(latlngs[i - 1], latlngs[i]);
-        dist.push(total);
+        distance += map.distance(latlngs[i - 1], latlngs[i]);
+        var diff = elevations[i] - elevations[i - 1];
+        if (diff > 0) denivele += diff;
+      }
+
+      var info = document.getElementById("info");
+      if (info) {
+        info.innerHTML =
+          "Distance : " + (distance / 1000).toFixed(1) +
+          " km — D+ : " + denivele.toFixed(0) + " m";
+      }
+
+      // ======================
+      // BOUTON RECENTRER
+      // ======================
+
+      var recenterBtn = document.getElementById("recenterBtn");
+      if (recenterBtn) {
+        recenterBtn.onclick = function () {
+          map.fitBounds(bounds, { padding: [40, 40] });
+        };
+      }
+
+      // ======================
+      // TÉLÉCHARGEMENT GPX
+      // ======================
+
+      var downloadBtn = document.getElementById("downloadBtn");
+      if (downloadBtn) {
+        downloadBtn.onclick = function () {
+          fetch(gpxUrl)
+            .then(r => r.blob())
+            .then(blob => {
+              var filename = gpxUrl.split("/").pop();
+              var url = URL.createObjectURL(blob);
+              var a = document.createElement("a");
+              a.href = url;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            });
+        };
+      }
+
+      // ======================
+      // PROFIL ALTIMÉTRIQUE
+      // ======================
+
+      var svg = document.getElementById("profile");
+      if (!svg) return;
+
+      svg.innerHTML = "";
+      svg.style.background = "#f8f8f8";
+      svg.style.border = "1px solid #ccc";
+
+      var distCum = [0];
+      var distTot = 0;
+
+      for (var i = 1; i < latlngs.length; i++) {
+        distTot += map.distance(latlngs[i - 1], latlngs[i]);
+        distCum.push(distTot);
       }
 
       var minEle = Math.min.apply(null, elevations);
       var maxEle = Math.max.apply(null, elevations);
 
-      var svg = document.getElementById("profile");
-      svg.innerHTML = "";
-      svg.style.background = "#f8f8f8";
-      svg.style.border = "1px solid #ccc";
-
-      var w = 1000, h = 180, pad = 20;
+      var width = 1000, height = 180, pad = 20;
 
       function x(d) {
-        return pad + (d / total) * (w - 2 * pad);
-      }
-      function y(e) {
-        return h - pad - ((e - minEle) / (maxEle - minEle)) * (h - 2 * pad);
+        return pad + (d / distTot) * (width - 2 * pad);
       }
 
-      var path = "";
+      function y(e) {
+        return height - pad -
+          ((e - minEle) / (maxEle - minEle)) *
+          (height - 2 * pad);
+      }
+
+      var d = "";
       for (var i = 0; i < elevations.length; i++) {
-        path += (i === 0 ? "M" : "L") + x(dist[i]) + " " + y(elevations[i]) + " ";
+        d += (i === 0 ? "M" : "L") +
+             x(distCum[i]) + " " +
+             y(elevations[i]) + " ";
       }
 
       var fillPath =
-        path +
-        "L " + x(total) + " " + (h - pad) +
-        " L " + x(0) + " " + (h - pad) + " Z";
+        d +
+        "L " + x(distTot) + " " + (height - pad) +
+        " L " + x(0) + " " + (height - pad) +
+        " Z";
 
       var fill = document.createElementNS("http://www.w3.org/2000/svg", "path");
       fill.setAttribute("d", fillPath);
@@ -168,12 +214,12 @@ document.addEventListener("DOMContentLoaded", function () {
       svg.appendChild(fill);
 
       var line = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      line.setAttribute("d", path);
+      line.setAttribute("d", d);
       line.setAttribute("fill", "none");
       line.setAttribute("stroke", "#d33");
       line.setAttribute("stroke-width", "2");
       svg.appendChild(line);
 
-    })
-    .addTo(map);
-});
+    });
+
+})();
