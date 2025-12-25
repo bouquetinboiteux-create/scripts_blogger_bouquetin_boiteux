@@ -1,3 +1,22 @@
+console.log("leaflet-gpx.js chargé");
+
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("DOM prêt");
+
+  var mapDiv = document.getElementById("map");
+  if (!mapDiv) {
+    console.error("DIV #map introuvable");
+    return;
+  }
+
+  var gpxUrl = mapDiv.dataset.gpx;
+  if (!gpxUrl) {
+    console.error("Attribut data-gpx manquant");
+    return;
+  }
+
+  console.log("GPX détecté :", gpxUrl);
+
 document.addEventListener("DOMContentLoaded", function () {
 
   var mapDiv = document.getElementById("map");
