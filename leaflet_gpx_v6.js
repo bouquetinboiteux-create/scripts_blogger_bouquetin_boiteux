@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("LEAFLET GPX V5");
+  console.log("LEAFLET GPX V6");
 
   function init() {
 
@@ -124,6 +124,45 @@
           color: "red",
           weight: 4
         }).addTo(map);
+
+        function addDirectionArrows(latlngs, map) {
+        
+          var arrowGroup = L.layerGroup().addTo(map);
+          var step = 25; // densité des flèches (plus petit = plus de flèches)
+        
+          for (var i = step; i < latlngs.length - step; i += step) {
+        
+            var p1 = L.latLng(latlngs[i - 1]);
+            var p2 = L.latLng(latlngs[i]);
+            var p3 = L.latLng(latlngs[i + 1]);
+        
+            // angle de direction
+            var angle = Math.atan2(
+              p3.lat - p1.lat,
+              p3.lng - p1.lng
+            );
+        
+            var size = 0.00015; // taille flèche (adapter si besoin)
+        
+            var left = [
+              p2.lat - size * Math.cos(angle - Math.PI / 6),
+              p2.lng - size * Math.sin(angle - Math.PI / 6)
+            ];
+        
+            var right = [
+              p2.lat - size * Math.cos(angle + Math.PI / 6),
+              p2.lng - size * Math.sin(angle + Math.PI / 6)
+            ];
+        
+            L.polyline([left, p2, right], {
+              color: "#c00",
+              weight: 2,
+              opacity: 0.9,
+              interactive: false
+            }).addTo(arrowGroup);
+          }
+        }
+
 
         bounds = line.getBounds();
         map.fitBounds(bounds, { padding: [40, 40] });
