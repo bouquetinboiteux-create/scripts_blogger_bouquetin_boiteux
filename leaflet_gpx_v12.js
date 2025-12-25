@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v11");
+  console.log("Leaflet GPX Blog v12");
 
   function init() {
 
@@ -78,7 +78,7 @@
     });
 
     /* =========================
-       ICÔNES
+       ICÔNE DÉPART / ARRIVÉE
     ========================= */
     var redIcon = L.icon({
       iconUrl:
@@ -137,67 +137,36 @@
           .addTo(map)
           .bindPopup("🏁 Arrivée");
 
-        /* =========================
-           FLÈCHES DE SENS (SANS LIB)
-        ========================= */
-        function angle(p1, p2) {
-          return Math.atan2(
-            p2[1] - p1[1], // Δ longitude (X)
-            p2[0] - p1[0]  // Δ latitude  (Y)
-          ) * 180 / Math.PI;
-        }
-
-        var arrowIcon = L.divIcon({
-          className: "",
-          html: "<div style='font-size:22px;font-weight:bold;color:#c00;'>&gt;</div>",
-          iconSize: [22, 22],
-          iconAnchor: [11, 11]
-        });
-
-        var lastArrowDist = 0;
-        var arrowStep = 800; // mètres
-        
-        for (var i = 1; i < latlngs.length; i++) {
-        
-          if (dist[i] - lastArrowDist < arrowStep) continue;
-        
-          lastArrowDist = dist[i];
-        
-          L.marker(latlngs[i], {
-            icon: arrowIcon,
-            rotationAngle: angle(latlngs[i - 1], latlngs[i]),
-            rotationOrigin: "center"
-          }).addTo(map);
-        }
-
-        /* =========================
-           PROFIL ALTIMÉTRIQUE
-        ========================= */
+        /* ===== PROFIL ALTIM hookup hookup ===== */
         drawProfile(dist, elevations, total);
 
-        /* =========================
-           BOUTONS
-        ========================= */
-        document.getElementById("recenterBtn").onclick = function () {
-          map.fitBounds(bounds, { padding: [50, 50] });
-        };
+        /* ===== BOUTONS ===== */
+        var recenterBtn = document.getElementById("recenterBtn");
+        if (recenterBtn) {
+          recenterBtn.onclick = function () {
+            map.fitBounds(bounds, { padding: [50, 50] });
+          };
+        }
 
-        document.getElementById("downloadBtn").onclick = function () {
-          fetch(gpxUrl)
-            .then(r => r.blob())
-            .then(blob => {
-              var name = gpxUrl.split("/").pop();
-              var a = document.createElement("a");
-              a.href = URL.createObjectURL(blob);
-              a.download = name;
-              a.click();
-              URL.revokeObjectURL(a.href);
-            });
-        };
+        var downloadBtn = document.getElementById("downloadBtn");
+        if (downloadBtn) {
+          downloadBtn.onclick = function () {
+            fetch(gpxUrl)
+              .then(r => r.blob())
+              .then(blob => {
+                var name = gpxUrl.split("/").pop();
+                var a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = name;
+                a.click();
+                URL.revokeObjectURL(a.href);
+              });
+          };
+        }
       });
 
     /* =========================
-       PROFIL SVG
+       PROFIL ALTIMÉTRIQUE SVG
     ========================= */
     function drawProfile(dist, ele, total) {
 
