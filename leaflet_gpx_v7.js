@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("LEAFLET GPX V6");
+  console.log("Leaflet GPX v7");
 
   function init() {
 
@@ -10,18 +10,12 @@
       return;
     }
 
-    if (typeof L === "undefined") {
-      console.error("Leaflet non chargé");
-      return;
-    }
-
     var gpxUrl = mapDiv.dataset.gpx;
-    if (!gpxUrl) {
-      console.error("data-gpx manquant");
-      return;
-    }
+    if (!gpxUrl || typeof L === "undefined") return;
 
-    // ===== CARTE =====
+    /* =========================
+       CARTE & FONDS
+    ========================= */
     var map = L.map("map");
 
     var osm = L.tileLayer(
@@ -34,54 +28,16 @@
       { attribution: "&copy; OpenTopoMap" }
     );
 
-    var satellite = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      { attribution: "&copy; Esri" }
-    );
-
     topo.addTo(map);
 
     L.control.layers({
       "Topographique": topo,
-      "OpenStreetMap": osm,
-      "Satellite": satellite
+      "OpenStreetMap": osm
     }).addTo(map);
 
-    // ===== BOUTON PLEIN ÉCRAN =====
-    var Fullscreen = L.Control.extend({
-      options: { position: "topleft" },
-      onAdd: function () {
-        var btn = L.DomUtil.create("a", "leaflet-bar");
-        btn.innerHTML = "⛶";
-        btn.title = "Plein écran";
-        btn.style.width = "30px";
-        btn.style.height = "30px";
-        btn.style.lineHeight = "30px";
-        btn.style.textAlign = "center";
-        btn.style.cursor = "pointer";
-        btn.style.background = "white";
-
-        L.DomEvent.on(btn, "click", function (e) {
-          L.DomEvent.stop(e);
-          if (!document.fullscreenElement) {
-            mapDiv.requestFullscreen();
-          } else {
-            document.exitFullscreen();
-          }
-        });
-
-        return btn;
-      }
-    });
-    map.addControl(new Fullscreen());
-
-    document.addEventListener("fullscreenchange", function () {
-      setTimeout(function () {
-        map.invalidateSize();
-      }, 200);
-    });
-
-    // ===== ICÔNE =====
+    /* =========================
+       ICÔNES
+    ========================= */
     var redIcon = L.icon({
       iconUrl:
         "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
@@ -91,12 +47,27 @@
       iconAnchor: [12, 41]
     });
 
-    var bounds;
+    /* =========================
+       FLÈCHE SVG (STYLE INTERNE)
+    ========================= */
+    function arrowIcon(angle) {
+      return L.divIcon({
+        className: "",
+        iconSize: [16, 16],
+        html:
+          '<svg width="16" height="16" viewBox="0 0 24 24" ' +
+          'style="transform:rotate(' + angle + 'deg)">' +
+          '<path d="M4 12h12l-4-4m4 4l-4 4" ' +
+          'fill="none" stroke="#c00" stroke-width="2"/></svg>'
+      });
+    }
 
-    // ===== GPX =====
+    /* =========================
+       CHARGEMENT GPX
+    ========================= */
     fetch(gpxUrl)
-      .then(function (r) { return r.text(); })
-      .then(function (text) {
+      .then(r => r.text())
+      .then(text => {
 
         var xml = new DOMParser().parseFromString(text, "application/xml");
         var pts = xml.getElementsByTagName("trkpt");
@@ -120,60 +91,54 @@
           }
         }
 
+        /* ===== TRACE ===== */
         var line = L.polyline(latlngs, {
-          color: "red",
-          weight: 4
+          color: "#c00",
+          weight: 4,
+          opacity: 0.9
         }).addTo(map);
 
-        function addDirectionArrows(latlngs, map) {
-        
-          var arrowGroup = L.layerGroup().addTo(map);
-          var step = 25; // densité des flèches (plus petit = plus de flèches)
-        
-          for (var i = step; i < latlngs.length - step; i += step) {
-        
-            var p1 = L.latLng(latlngs[i - 1]);
-            var p2 = L.latLng(latlngs[i]);
-            var p3 = L.latLng(latlngs[i + 1]);
-        
-            // angle de direction
-            var angle = Math.atan2(
-              p3.lat - p1.lat,
-              p3.lng - p1.lng
-            );
-        
-            var size = 0.00015; // taille flèche (adapter si besoin)
-        
-            var left = [
-              p2.lat - size * Math.cos(angle - Math.PI / 6),
-              p2.lng - size * Math.sin(angle - Math.PI / 6)
-            ];
-        
-            var right = [
-              p2.lat - size * Math.cos(angle + Math.PI / 6),
-              p2.lng - size * Math.sin(angle + Math.PI / 6)
-            ];
-        
-            L.polyline([left, p2, right], {
-              color: "#c00",
-              weight: 2,
-              opacity: 0.9,
-              interactive: false
-            }).addTo(arrowGroup);
-          }
+        var bounds = line.getBounds();
+        map.fitBounds(bounds, { padding: [50, 50] });
+
+        /* ===== MARQUEURS ===== */
+        L.marker(latlngs[0], { icon: redIcon })
+          .addTo(map)
+          .bindPopup("🚩 Départ");
+
+        L.marker(latlngs[latlngs.length - 1], { icon: redIcon })
+          .addTo(map)
+          .bindPopup("🏁 Arrivée");
+
+        /* =========================
+           FLÈCHES DE DIRECTION
+        ========================= */
+        var step = 400; // mètres entre flèches
+
+        for (var i = 1; i < latlngs.length; i++) {
+
+          if (dist[i] % step > step / 2) continue;
+
+          var p1 = L.latLng(latlngs[i - 1]);
+          var p2 = L.latLng(latlngs[i]);
+
+          var angle = Math.atan2(
+            p2.lng - p1.lng,
+            p2.lat - p1.lat
+          ) * 180 / Math.PI;
+
+          L.marker(p2, {
+            icon: arrowIcon(angle),
+            interactive: false
+          }).addTo(map);
         }
-
-
-        bounds = line.getBounds();
-        map.fitBounds(bounds, { padding: [40, 40] });
-
-        L.marker(latlngs[0], { icon: redIcon }).addTo(map);
-        L.marker(latlngs[latlngs.length - 1], { icon: redIcon }).addTo(map);
 
         drawProfile(dist, elevations, total);
       });
 
-    // ===== PROFIL ALTIMÉTRIQUE =====
+    /* =========================
+       PROFIL ALTIMÉTRIQUE
+    ========================= */
     function drawProfile(dist, ele, total) {
 
       var svg = document.getElementById("profile");
@@ -217,11 +182,13 @@
       svg.appendChild(l);
     }
 
-    // ===== BOUTONS =====
+    /* =========================
+       BOUTONS
+    ========================= */
     var recenterBtn = document.getElementById("recenterBtn");
     if (recenterBtn) {
       recenterBtn.onclick = function () {
-        if (bounds) map.fitBounds(bounds, { padding: [40, 40] });
+        map.fitBounds(map.getBounds(), { padding: [50, 50] });
       };
     }
 
@@ -229,18 +196,16 @@
     if (downloadBtn) {
       downloadBtn.onclick = function () {
         fetch(gpxUrl)
-          .then(function (r) { return r.blob(); })
-          .then(function (blob) {
-            var name = gpxUrl.split("/").pop();
+          .then(r => r.blob())
+          .then(blob => {
             var a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = name;
+            a.download = gpxUrl.split("/").pop();
             a.click();
             URL.revokeObjectURL(a.href);
           });
       };
     }
-
   }
 
   init();
