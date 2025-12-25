@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v10");
+  console.log("Leaflet GPX Blog v11");
 
   function init() {
 
@@ -149,12 +149,9 @@
 
         var arrowIcon = L.divIcon({
           className: "",
-          html:
-            "<svg width='12' height='12' viewBox='0 0 10 10'>" +
-            "<polygon points='0,0 10,5 0,10' fill='#c00'/>" +
-            "</svg>",
-          iconSize: [12, 12],
-          iconAnchor: [6, 6]
+          html: "<div style='font-size:22px;font-weight:bold;color:#c00;'>&gt;</div>",
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
         });
 
         var lastArrowDist = 0;
