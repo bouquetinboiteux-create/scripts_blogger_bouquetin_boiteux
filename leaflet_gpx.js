@@ -1,11 +1,12 @@
 (function () {
 
-  console.log("SCRIPT LEAFLET GPX OK");
+  console.log("LEAFLET GPX SCRIPT V2 OK");
 
-  function waitForMap() {
+  function init() {
+
     var mapDiv = document.getElementById("map");
     if (!mapDiv) {
-      setTimeout(waitForMap, 200);
+      setTimeout(init, 200);
       return;
     }
 
@@ -20,12 +21,25 @@
       return;
     }
 
-    var map = L.map("map").setView([45, 6], 13);
+    // ---- Carte ----
+    var map = L.map("map");
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap"
-    }).addTo(map);
+    L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { attribution: "&copy; OpenStreetMap" }
+    ).addTo(map);
 
+    // ---- Icône rouge ----
+    var redIcon = L.icon({
+      iconUrl:
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+      shadowUrl:
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41]
+    });
+
+    // ---- GPX ----
     fetch(gpxUrl)
       .then(function (r) { return r.text(); })
       .then(function (text) {
@@ -41,12 +55,27 @@
           ]);
         }
 
-        var line = L.polyline(latlngs, { color: "red" }).addTo(map);
-        map.fitBounds(line.getBounds());
+        var line = L.polyline(latlngs, {
+          color: "red",
+          weight: 4
+        }).addTo(map);
+
+        map.fitBounds(line.getBounds(), { padding: [40, 40] });
+
+        // départ
+        L.marker(latlngs[0], { icon: redIcon })
+          .addTo(map)
+          .bindPopup("🚩 Départ");
+
+        // arrivée
+        L.marker(latlngs[latlngs.length - 1], { icon: redIcon })
+          .addTo(map)
+          .bindPopup("🏁 Arrivée");
 
       });
+
   }
 
-  waitForMap();
+  init();
 
 })();
