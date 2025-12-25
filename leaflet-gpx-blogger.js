@@ -1,3 +1,5 @@
+console.log("LEAFLET-GPX-BLOGGER LOADED");
+
 (function () {
 
   console.log("SCRIPT LEAFLET GPX OK");
