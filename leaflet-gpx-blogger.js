@@ -1,4 +1,4 @@
-console.log("LEAFLET-GPX-BLOGGER LOADED");
+console.log("LEAFLET-GPX-BLOGGER V10 LOADED");
 
 (function () {
 
