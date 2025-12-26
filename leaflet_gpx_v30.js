@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX v29");
+  console.log("Leaflet GPX v30");
 
   function init() {
 
@@ -183,31 +183,8 @@
           fillOpacity: 1
         }).addTo(map);
 
-        /* **** LISSAGE DE LA TRACE **** */
-        function smoothElevations(elevations, windowSize) {
-          var smoothed = [];
-          var half = Math.floor(windowSize / 2);
-        
-          for (var i = 0; i < elevations.length; i++) {
-            var sum = 0;
-            var count = 0;
-        
-            for (var j = i - half; j <= i + half; j++) {
-              if (j >= 0 && j < elevations.length) {
-                sum += elevations[j];
-                count++;
-              }
-            }
-        
-            smoothed.push(sum / count);
-          }
-        
-          return smoothed;
-        }
-
         /* ===== PROFIL ALTIM hookup hookup ===== */
-        var elevationsSmooth = smoothElevations(elevations, 9);
-        drawProfile(dist, elevationsSmooth, total, latlngs, cursorMarker);
+        drawProfile(dist, elevations, total, latlngs, cursorMarker);
 
         /* ===== BOUTONS ===== */
         var recenterBtn = document.getElementById("recenterBtn");
