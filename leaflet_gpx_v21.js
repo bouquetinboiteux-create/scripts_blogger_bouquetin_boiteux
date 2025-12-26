@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v20");
+  console.log("Leaflet GPX Blog v21");
 
   function init() {
 
@@ -89,6 +89,9 @@
             dist.push(total);
           }
         }
+
+        // Correction : forcer la dernière distance au total exact
+        dist[dist.length - 1] = total;
 
         /* ===== TRACE ===== */
         var line = L.polyline(latlngs, {
