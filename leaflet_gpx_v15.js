@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v14");
+  console.log("Leaflet GPX Blog v15");
 
   function init() {
 
@@ -184,17 +184,7 @@
       var svg = document.getElementById("profile");
       if (!svg) return;
 
-      svg.innerHTML = "";
-
-      // Ligne verticale du curseur
-      var cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      cursor.setAttribute("y1", 0);
-      cursor.setAttribute("y2", 180);
-      cursor.setAttribute("stroke", "#c00");
-      cursor.setAttribute("stroke-width", "1");
-      cursor.setAttribute("opacity", "0");
-      svg.appendChild(cursor);
-      
+      svg.innerHTML = "";      
       svg.style.background = "#f7f7f7";
       svg.style.border = "1px solid #ccc";
 
