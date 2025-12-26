@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v18)");
+  console.log("Leaflet GPX Blog v19");
 
   function init() {
 
@@ -95,6 +95,30 @@
       fillColor: "#c00",
       fillOpacity: 1
     });
+
+    /* ===== BOUTONS ===== */
+    var recenterBtn = document.getElementById("recenterBtn");
+    if (recenterBtn) {
+       recenterBtn.onclick = function () {
+       map.fitBounds(bounds, { padding: [50, 50] });
+       };
+     }
+
+    var downloadBtn = document.getElementById("downloadBtn");
+    if (downloadBtn) {
+       downloadBtn.onclick = function () {
+        fetch(gpxUrl)
+          .then(r => r.blob())
+          .then(blob => {
+            var name = gpxUrl.split("/").pop();
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          });
+      };
+    }
 
     /* =========================
        CHARGEMENT GPX
