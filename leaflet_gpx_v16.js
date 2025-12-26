@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v15");
+  console.log("Leaflet GPX v16");
 
   function init() {
 
@@ -90,17 +90,6 @@
     });
 
     /* =========================
-       POINT MOBILE LIÉ AU PROFIL
-    ========================= */
-    var hoverMarker = L.circleMarker(latlngs[0], {
-      radius: 6,
-      color: "#c00",
-      fillColor: "#c00",
-      fillOpacity: 1,
-      weight: 2
-    }).addTo(map);
-
-    /* =========================
        CHARGEMENT GPX
     ========================= */
     fetch(gpxUrl)
@@ -184,7 +173,7 @@
       var svg = document.getElementById("profile");
       if (!svg) return;
 
-      svg.innerHTML = "";      
+      svg.innerHTML = "";
       svg.style.background = "#f7f7f7";
       svg.style.border = "1px solid #ccc";
 
