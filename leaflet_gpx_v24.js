@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX v23");
+  console.log("Leaflet GPX v24");
 
   function init() {
 
@@ -116,6 +116,7 @@
           }
         }
 
+        /* ===== TRACE ===== */
         var line = L.polyline(latlngs, {
           color: "red",
           weight: 4
@@ -124,6 +125,7 @@
         var bounds = line.getBounds();
         map.fitBounds(bounds, { padding: [50, 50] });
 
+        /* ===== MARQUEURS ===== */
         L.marker(latlngs[0], { icon: redIcon }).addTo(map).bindPopup("🚩 Départ");
         L.marker(latlngs[latlngs.length - 1], { icon: redIcon }).addTo(map).bindPopup("🏁 Arrivée");
 
@@ -137,6 +139,30 @@
 
         drawProfile(dist, elevations, total, latlngs, cursorMarker);
       });
+
+    /* ===== BOUTONS ===== */ 
+    var recenterBtn = document.getElementById("recenterBtn");
+    if (recenterBtn) {
+      recenterBtn.onclick = function () {
+        map.fitBounds(bounds, { padding: [50, 50] });
+      };
+    }
+    
+    var downloadBtn = document.getElementById("downloadBtn");
+    if (downloadBtn) {
+      downloadBtn.onclick = function () {
+        fetch(gpxUrl)
+          .then(r => r.blob())
+          .then(blob => {
+            var name = gpxUrl.split("/").pop();
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          });
+      };
+    }
 
     /* =========================
        PROFIL + INTERACTION
