@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX v25");
+  console.log("Leaflet GPX v26");
 
   function init() {
 
@@ -136,6 +136,14 @@
         L.marker(latlngs[latlngs.length - 1], { icon: redIcon })
           .addTo(map)
           .bindPopup("🏁 Arrivée");
+
+        var cursorMarker = L.circleMarker(latlngs[0], {
+          radius: 6,
+          color: "#000",
+          weight: 2,
+          fillColor: "#fff",
+          fillOpacity: 1
+        }).addTo(map);
 
         /* ===== PROFIL ALTIM hookup hookup ===== */
        drawProfile(dist, elevations, total, latlngs, cursorMarker);
