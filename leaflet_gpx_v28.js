@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX v16");
+  console.log("Leaflet GPX v28");
 
   function init() {
 
@@ -118,11 +118,49 @@
           }
         }
 
+        /* ***** CALCUL DES STATS **** */
+        var dPlus = 0;
+        var dMinus = 0;
+        var maxSlope = 0;
+        
+        for (var i = 1; i < elevations.length; i++) {
+          var diff = elevations[i] - elevations[i - 1];
+          var dDist = dist[i] - dist[i - 1];
+        
+          if (diff > 0) dPlus += diff;
+          if (diff < 0) dMinus += Math.abs(diff);
+        
+          if (dDist > 0) {
+            var slope = (diff / dDist) * 100;
+            maxSlope = Math.max(maxSlope, Math.abs(slope));
+          }
+        }
+        
+        var eleMin = Math.min.apply(null, elevations);
+        var eleMax = Math.max.apply(null, elevations);
+        var eleAvg =
+          elevations.reduce((a, b) => a + b, 0) / elevations.length;
+        
+        var penteMoyenne = (dPlus / total) * 100;
+
+        var statsDiv = document.getElementById("stats");
+        if (statsDiv) {
+          statsDiv.innerHTML =
+            "📏 Distance : " + (total / 1000).toFixed(1) + " km<br>" +
+            "⬆️ D+ : " + dPlus.toFixed(0) + " m<br>" +
+            "⬇️ D- : " + dMinus.toFixed(0) + " m<br>" +
+            "⛰ Altitude min : " + eleMin.toFixed(0) + " m<br>" +
+            "🏔 Altitude max : " + eleMax.toFixed(0) + " m<br>" +
+            "📐 Altitude moyenne : " + eleAvg.toFixed(0) + " m<br>" +
+            "📊 Pente moyenne : " + penteMoyenne.toFixed(1) + " %<br>" +
+            "⚠️ Pente max : " + maxSlope.toFixed(1) + " %";
+        }
+        
         /* ===== TRACE ===== */
         var line = L.polyline(latlngs, {
-          color: "red",
-          weight: 4,
-          opacity: 0.9
+            color: "red",
+            weight: 4,
+            opacity: 0.9
         }).addTo(map);
 
         var bounds = line.getBounds();
@@ -137,8 +175,16 @@
           .addTo(map)
           .bindPopup("🏁 Arrivée");
 
+        var cursorMarker = L.circleMarker(latlngs[0], {
+          radius: 6,
+          color: "#000",
+          weight: 2,
+          fillColor: "#fff",
+          fillOpacity: 1
+        }).addTo(map);
+
         /* ===== PROFIL ALTIM hookup hookup ===== */
-        drawProfile(dist, elevations, total);
+       drawProfile(dist, elevations, total, latlngs, cursorMarker);
 
         /* ===== BOUTONS ===== */
         var recenterBtn = document.getElementById("recenterBtn");
@@ -166,9 +212,9 @@
       });
 
     /* =========================
-       PROFIL ALTIMÉTRIQUE SVG
+       PROFIL + INTERACTION
     ========================= */
-    function drawProfile(dist, ele, total) {
+    function drawProfile(dist, ele, total, latlngs, cursorMarker) {
 
       var svg = document.getElementById("profile");
       if (!svg) return;
@@ -178,36 +224,60 @@
       svg.style.border = "1px solid #ccc";
 
       var w = 1000, h = 180, p = 20;
-      var min = Math.min.apply(null, ele);
-      var max = Math.max.apply(null, ele);
+      var min = Math.min(...ele);
+      var max = Math.max(...ele);
 
-      function x(d) {
-        return p + (d / total) * (w - 2 * p);
-      }
-      function y(e) {
-        return h - p - ((e - min) / (max - min)) * (h - 2 * p);
-      }
+      function x(d) { return p + (d / total) * (w - 2 * p); }
+      function y(e) { return h - p - ((e - min) / (max - min)) * (h - 2 * p); }
 
       var d = "";
       for (var i = 0; i < ele.length; i++) {
         d += (i ? "L" : "M") + x(dist[i]) + " " + y(ele[i]) + " ";
       }
 
-      var fill = d +
-        "L " + x(total) + " " + (h - p) +
-        " L " + x(0) + " " + (h - p) + " Z";
-
+      var fill = d + "L " + x(total) + " " + (h - p) + " L " + x(0) + " " + (h - p) + " Z";
+      
       var f = document.createElementNS("http://www.w3.org/2000/svg", "path");
       f.setAttribute("d", fill);
       f.setAttribute("fill", "rgba(200,0,0,0.25)");
       svg.appendChild(f);
-
+      
       var l = document.createElementNS("http://www.w3.org/2000/svg", "path");
       l.setAttribute("d", d);
       l.setAttribute("fill", "none");
       l.setAttribute("stroke", "#c00");
       l.setAttribute("stroke-width", "2");
       svg.appendChild(l);
+
+      var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "#c00");
+      path.setAttribute("stroke-width", "2");
+      svg.appendChild(path);
+
+      var cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      cursor.setAttribute("y1", p);
+      cursor.setAttribute("y2", h - p);
+      cursor.setAttribute("stroke", "#000");
+      cursor.setAttribute("stroke-width", "1");
+      svg.appendChild(cursor);
+
+      svg.addEventListener("mousemove", function (e) {
+        var rect = svg.getBoundingClientRect();
+        var px = (e.clientX - rect.left) / rect.width * w;
+        px = Math.max(p, Math.min(w - p, px));
+
+        var targetDist = (px - p) / (w - 2 * p) * total;
+
+        var i = 0;
+        while (i < dist.length && dist[i] < targetDist) i++;
+
+        cursor.setAttribute("x1", px);
+        cursor.setAttribute("x2", px);
+
+        cursorMarker.setLatLng(latlngs[Math.min(i, latlngs.length - 1)]);
+      });
     }
   }
 
