@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v9 chargé (profil interactif)");
+  console.log("Leaflet GPX Blog v18)");
 
   function init() {
 
@@ -205,19 +205,29 @@
       /* ===== Interaction ===== */
       function moveCursor(evt) {
         var rect = svg.getBoundingClientRect();
-        var px = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
+      
+        var clientX = evt.touches
+          ? evt.touches[0].clientX
+          : evt.clientX;
+      
+        // position en pixels écran
+        var pxScreen = clientX - rect.left;
+      
+        // conversion vers coordonnées SVG (viewBox = 1000)
+        var px = (pxScreen / rect.width) * 1000;
+      
         px = Math.max(p, Math.min(w - p, px));
-
+      
         cursorLine.setAttribute("x1", px);
         cursorLine.setAttribute("x2", px);
-
+      
         var ratio = (px - p) / (w - 2 * p);
         var dTarget = ratio * total;
-
+      
         var i = 0;
         while (i < dist.length && dist[i] < dTarget) i++;
         i = Math.min(i, latlngs.length - 1);
-
+      
         cursorMarker.setLatLng(latlngs[i]).addTo(map);
       }
 
