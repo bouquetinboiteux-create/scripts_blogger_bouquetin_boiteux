@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v13");
+  console.log("Leaflet GPX Blog v14");
 
   function init() {
 
@@ -229,33 +229,6 @@
       l.setAttribute("stroke", "#c00");
       l.setAttribute("stroke-width", "2");
       svg.appendChild(l);
-
-      svg.addEventListener("mousemove", function (e) {
-      
-        var rect = svg.getBoundingClientRect();
-        var x = e.clientX - rect.left;
-      
-        var pct = Math.max(0, Math.min(1, x / rect.width));
-        var targetDist = pct * total;
-      
-        // Trouver le point GPX le plus proche
-        var i = 0;
-        while (i < dist.length - 1 && dist[i] < targetDist) i++;
-      
-        // Déplacer curseur SVG
-        var cursorX = p + pct * (w - 2 * p);
-        cursor.setAttribute("x1", cursorX);
-        cursor.setAttribute("x2", cursorX);
-        cursor.setAttribute("opacity", "1");
-      
-        // Déplacer le point sur la carte
-        hoverMarker.setLatLng(latlngs[i]);
-      });
-      
-      svg.addEventListener("mouseleave", function () {
-        cursor.setAttribute("opacity", "0");
-      });
-
     }
   }
 
