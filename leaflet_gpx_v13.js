@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX Blog v12");
+  console.log("Leaflet GPX Blog v13");
 
   function init() {
 
@@ -90,6 +90,17 @@
     });
 
     /* =========================
+       POINT MOBILE LIÉ AU PROFIL
+    ========================= */
+    var hoverMarker = L.circleMarker(latlngs[0], {
+      radius: 6,
+      color: "#c00",
+      fillColor: "#c00",
+      fillOpacity: 1,
+      weight: 2
+    }).addTo(map);
+
+    /* =========================
        CHARGEMENT GPX
     ========================= */
     fetch(gpxUrl)
@@ -174,6 +185,16 @@
       if (!svg) return;
 
       svg.innerHTML = "";
+
+      // Ligne verticale du curseur
+      var cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      cursor.setAttribute("y1", 0);
+      cursor.setAttribute("y2", 180);
+      cursor.setAttribute("stroke", "#c00");
+      cursor.setAttribute("stroke-width", "1");
+      cursor.setAttribute("opacity", "0");
+      svg.appendChild(cursor);
+      
       svg.style.background = "#f7f7f7";
       svg.style.border = "1px solid #ccc";
 
@@ -208,6 +229,33 @@
       l.setAttribute("stroke", "#c00");
       l.setAttribute("stroke-width", "2");
       svg.appendChild(l);
+
+      svg.addEventListener("mousemove", function (e) {
+      
+        var rect = svg.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+      
+        var pct = Math.max(0, Math.min(1, x / rect.width));
+        var targetDist = pct * total;
+      
+        // Trouver le point GPX le plus proche
+        var i = 0;
+        while (i < dist.length - 1 && dist[i] < targetDist) i++;
+      
+        // Déplacer curseur SVG
+        var cursorX = p + pct * (w - 2 * p);
+        cursor.setAttribute("x1", cursorX);
+        cursor.setAttribute("x2", cursorX);
+        cursor.setAttribute("opacity", "1");
+      
+        // Déplacer le point sur la carte
+        hoverMarker.setLatLng(latlngs[i]);
+      });
+      
+      svg.addEventListener("mouseleave", function () {
+        cursor.setAttribute("opacity", "0");
+      });
+
     }
   }
 
