@@ -1,6 +1,6 @@
 (function () {
 
-  console.log("Leaflet GPX v26");
+  console.log("Leaflet GPX v27");
 
   function init() {
 
@@ -196,6 +196,20 @@
       for (var i = 0; i < ele.length; i++) {
         d += (i ? "L" : "M") + x(dist[i]) + " " + y(ele[i]) + " ";
       }
+
+      var fill = d + "L " + x(total) + " " + (h - p) + " L " + x(0) + " " + (h - p) + " Z";
+      
+      var f = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      f.setAttribute("d", fill);
+      f.setAttribute("fill", "rgba(200,0,0,0.25)");
+      svg.appendChild(f);
+      
+      var l = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      l.setAttribute("d", d);
+      l.setAttribute("fill", "none");
+      l.setAttribute("stroke", "#c00");
+      l.setAttribute("stroke-width", "2");
+      svg.appendChild(l);
 
       var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", d);
